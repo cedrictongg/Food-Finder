@@ -1,0 +1,195 @@
+{
+  "languageModel": {
+    "types": [
+      {
+        "name": "AMAZON.Food",
+        "values": [
+          {
+            "id": null,
+            "name": {
+              "value": "burgers",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "noodles",
+              "synonyms": []
+            }
+          }
+        ]
+      },
+      {
+        "name": "Food_Categories",
+        "values": [
+          {
+            "id": null,
+            "name": {
+              "value": "italian",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "vegan",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "taiwanese",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "russian",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "seafood",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "chinese",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "indian",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "vegetarian",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "gluten free",
+              "synonyms": []
+            }
+          }
+        ]
+      }
+    ],
+    "intents": [
+      {
+        "name": "AMAZON.CancelIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.HelpIntent",
+        "samples": []
+      },
+      {
+        "name": "AMAZON.StopIntent",
+        "samples": []
+      },
+      {
+        "name": "FoodRecommendationIntent",
+        "samples": [
+          "i want {Category} {Food}",
+          "i'm hungry",
+          "i am hungry",
+          "i want to eat",
+          "i want to eat {Food}"
+        ],
+        "slots": [
+          {
+            "name": "Food",
+            "type": "AMAZON.Food",
+            "samples": [
+              "{Food}"
+            ]
+          },
+          {
+            "name": "Category",
+            "type": "Food_Categories",
+            "samples": [
+              "{Category}"
+            ]
+          }
+        ]
+      }
+    ],
+    "invocationName": "food finder"
+  },
+  "prompts": [
+    {
+      "id": "Elicit.Intent-FoodRecommendationIntent.IntentSlot-Food",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "What did you want to eat?"
+        },
+        {
+          "type": "PlainText",
+          "value": "what kind of {Category} food did you want to eat?"
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-FoodRecommendationIntent.IntentSlot-Category",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "What is your dietary restriction, if any? "
+        },
+        {
+          "type": "PlainText",
+          "value": "So you want {Food}. What is your dietary restriction, if any?"
+        },
+        {
+          "type": "PlainText",
+          "value": "what kind of {Food}?"
+        }
+      ]
+    }
+  ],
+  "dialog": {
+    "intents": [
+      {
+        "name": "FoodRecommendationIntent",
+        "confirmationRequired": false,
+        "prompts": {},
+        "slots": [
+          {
+            "name": "Food",
+            "type": "AMAZON.Food",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicitation": "Elicit.Intent-FoodRecommendationIntent.IntentSlot-Food"
+            }
+          },
+          {
+            "name": "Category",
+            "type": "Food_Categories",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicitation": "Elicit.Intent-FoodRecommendationIntent.IntentSlot-Category"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
