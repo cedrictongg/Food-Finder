@@ -3,7 +3,7 @@ import requests
 import json
 import credentials
 
-data = {}
+info = {}
 # --------------- Helpers that build all of the responses ----------------------
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
@@ -53,8 +53,10 @@ def handle_session_end_request():
 
 def food_recommendation_intent(intent, session):
     session_attributes = session.get('attributes', {})
-    print(data)
-    print('this is the event response:\n\n {}'.format(intent))
+    print(info['api'])
+    address = get_info(info)
+    print(address)
+    print('this is the event response:\n{}'.format(intent))
     dialog_state = intent['dialogState']
     intent = intent['intent']
     should_end_session = False
@@ -71,7 +73,10 @@ def food_recommendation_intent(intent, session):
             category = foods['Category']['value']
             food = foods['Food']['value']
             places = yelp_conn(category, food)
-            speech_output = ''.join([speech_output, 'You can find delicious {} {} at {} on {}'.format(category, food, places[0]['name'], places[0]['location']['address1'])])
+            if foods['Category']['value'].upper() == 'none'.upper():
+                speech_output = ''.join([speech_output, 'You can find delicious {} at {} on {}'.format(food, places[0]['name'], places[0]['location']['address1'])])
+            else:
+                speech_output = ''.join([speech_output, 'You can find delicious {} {} at {} on {}'.format(category, food, places[0]['name'], places[0]['location']['address1'])])
             return build_response(session_attributes, build_speechlet_response('Food Finder', speech_output, reprompt_text, should_end_session))
         else:
             if dialog_state in ('STARTED', 'IN_PROGRESS'):
@@ -100,10 +105,14 @@ def yelp_conn(category, term):
     return yelp_json['businesses']
 
 def get_api_device(event_info):
-    info = {}
     info['api'] = event_info['context']['System']['apiAccessToken']
     info['id'] = event_info['context']['System']['device']['deviceId']
-    return info
+
+def get_info(data):
+    url = 'https://api.amazonalexa.com/v1/devices/{}/settings/address/countryAndPostalCode'.format(data['id'])
+    address = requests.get(url = url, headers = {'Authorization': 'Bearer {}'.format(data['api'])})
+    address_json = json.dumps(address.text)
+    return address_json
 
 def continue_dialog():
     message = {}
@@ -142,8 +151,7 @@ def on_session_ended(session_ended_request, session):
 # --------------- Main handler ------------------
 
 def lambda_handler(event, context):
-    data = get_api_device(event)
-    print(data)
+    get_api_device(event)
     print("event.session.application.applicationId=" + event['session']['application']['applicationId'])
     if event['session']['new']:
     	on_session_started({'requestId': event['request']['requestId']}, event['session'])
