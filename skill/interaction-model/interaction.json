@@ -17,6 +17,81 @@
               "value": "noodles",
               "synonyms": []
             }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "beef",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "pork",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "chow mein",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "beef noodle soup",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "tacos",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "al pastor",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "chinese food",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "mexican food",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "italian food",
+              "synonyms": []
+            }
+          }
+        ]
+      },
+      {
+        "name": "AMAZON.US_CITY",
+        "values": [
+          {
+            "id": null,
+            "name": {
+              "value": "Rosemead California",
+              "synonyms": []
+            }
           }
         ]
       },
@@ -26,64 +101,74 @@
           {
             "id": null,
             "name": {
-              "value": "italian",
-              "synonyms": []
-            }
-          },
-          {
-            "id": null,
-            "name": {
               "value": "vegan",
-              "synonyms": []
-            }
-          },
-          {
-            "id": null,
-            "name": {
-              "value": "taiwanese",
-              "synonyms": []
-            }
-          },
-          {
-            "id": null,
-            "name": {
-              "value": "russian",
-              "synonyms": []
-            }
-          },
-          {
-            "id": null,
-            "name": {
-              "value": "seafood",
-              "synonyms": []
-            }
-          },
-          {
-            "id": null,
-            "name": {
-              "value": "chinese",
-              "synonyms": []
-            }
-          },
-          {
-            "id": null,
-            "name": {
-              "value": "indian",
-              "synonyms": []
+              "synonyms": [
+                "vegetarian"
+              ]
             }
           },
           {
             "id": null,
             "name": {
               "value": "vegetarian",
-              "synonyms": []
+              "synonyms": [
+                "vegan"
+              ]
             }
           },
           {
             "id": null,
             "name": {
               "value": "gluten free",
+              "synonyms": [
+                "gluten-free"
+              ]
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "pescetarian",
+              "synonyms": [
+                "pescetarianism",
+                "fish"
+              ]
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "none",
+              "synonyms": [
+                "i do not have any",
+                "i don't have any",
+                "nope",
+                "no"
+              ]
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "lacto vegetarian",
               "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "ovo vegetarian",
+              "synonyms": []
+            }
+          },
+          {
+            "id": null,
+            "name": {
+              "value": "non dairy",
+              "synonyms": [
+                "no milk",
+                "no cheese"
+              ]
             }
           }
         ]
@@ -105,11 +190,11 @@
       {
         "name": "FoodRecommendationIntent",
         "samples": [
-          "i want {Category} {Food}",
           "i'm hungry",
           "i am hungry",
           "i want to eat",
-          "i want to eat {Food}"
+          "i want to eat {Food}",
+          "{Food}"
         ],
         "slots": [
           {
@@ -127,6 +212,24 @@
             ]
           }
         ]
+      },
+      {
+        "name": "GetLocationIntent",
+        "samples": [
+          "set location",
+          "i want to set my location",
+          "i would like to choose my location"
+        ],
+        "slots": [
+          {
+            "name": "Area",
+            "type": "AMAZON.US_CITY",
+            "samples": [
+              "{Area}",
+              "i am located in {Area}"
+            ]
+          }
+        ]
       }
     ],
     "invocationName": "food finder"
@@ -138,10 +241,6 @@
         {
           "type": "PlainText",
           "value": "What did you want to eat?"
-        },
-        {
-          "type": "PlainText",
-          "value": "what kind of {Category} food did you want to eat?"
         }
       ]
     },
@@ -150,15 +249,20 @@
       "variations": [
         {
           "type": "PlainText",
-          "value": "What is your dietary restriction, if any? "
+          "value": "Do you have any dietary restrictions, If so, what are they? "
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-GetLocationIntent.IntentSlot-Area",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "where are you located?"
         },
         {
           "type": "PlainText",
-          "value": "So you want {Food}. What is your dietary restriction, if any?"
-        },
-        {
-          "type": "PlainText",
-          "value": "what kind of {Food}?"
+          "value": "what area did you want to choose?"
         }
       ]
     }
@@ -186,6 +290,22 @@
             "confirmationRequired": false,
             "prompts": {
               "elicitation": "Elicit.Intent-FoodRecommendationIntent.IntentSlot-Category"
+            }
+          }
+        ]
+      },
+      {
+        "name": "GetLocationIntent",
+        "confirmationRequired": false,
+        "prompts": {},
+        "slots": [
+          {
+            "name": "Area",
+            "type": "AMAZON.US_CITY",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicitation": "Elicit.Intent-GetLocationIntent.IntentSlot-Area"
             }
           }
         ]
