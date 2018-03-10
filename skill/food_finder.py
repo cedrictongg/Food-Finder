@@ -45,7 +45,7 @@ def get_welcome_response(session):
     speech_output = ''
     check = get_item(session['user']['userId'])
     if not check:
-        speech_output = 'Welcome to Food Finder. Start by saying: choose location'
+        speech_output = 'Welcome to Food Finder. It appears this is your first time using this skill. Start by saying: choose location'
     else:
         speech_output = 'Welcome to Food Finder. What would you like to eat?'
     return build_response(session_attributes, build_speechlet_response(card_title, speech_output, speech_output, should_end_session))
@@ -58,28 +58,47 @@ def handle_session_end_request():
 
 # --------------- Intents ------------------
 
-# TODO: Add a way to change location if the user requests it
 def get_location_intent(intent, session):
     session_attributes = {}
     check = get_item(session['user']['userId'])
     dialog_state = intent['dialogState']
     speech_output = ''
+    reprompt_text = 'What would you like to eat?'
     print(intent)
-    if 'location' in check[0]:
+    if check:
         should_end_session = False
         speech_output = 'Your location should be: {}.'.format(check[0]['location'])
         speech_output = ''.join([speech_output, ' What would you like to eat?'])
-        reprompt_text = 'What would you like to eat?'
-        return build_response(session_attributes, build_speechlet_response(intent['intent']['name'], speech_output, reprompt_text, should_end_session))
-    else:
-        if dialog_state in ('STARTED', 'IN_PROGRESS'):
-            return continue_dialog()
-        elif dialog_state == 'COMPLETED':
-            should_end_session = False
-            insert_item(session['user']['userId'], intent['intent']['slots']['Area']['value'])
-            speech_output = ''.join([speech_output, 'Alright, we can start looking for food. What did you want to eat?'])
-            reprompt_text = 'What did you want to eat?'
-            return build_response(session_attributes, build_speechlet_response(intent['intent']['name'], speech_output, reprompt_text, should_end_session))
+        return build_response(session_attributes, build_speechlet_response('Location Set', speech_output, reprompt_text, should_end_session))
+
+    if dialog_state in ('STARTED', 'IN_PROGRESS'):
+        return continue_dialog()
+    elif dialog_state == 'COMPLETED':
+        should_end_session = False
+        insert_item(session['user']['userId'], intent['intent']['slots']['Area']['value'])
+        speech_output = ''.join([speech_output, 'Alright, we can start looking for food. What would you like to eat?'])
+        return build_response(session_attributes, build_speechlet_response('Getting Location', speech_output, reprompt_text, should_end_session))
+
+def change_location_intent(intent, session):
+    session_attributes = {}
+    check = get_item(session['user']['userId'])
+    dialog_state = intent['dialogState']
+    speech_output = ''
+    reprompt_text = 'What would you like to eat?'
+    if not check:
+        should_end_session = False
+        speech_output = ''.join([speech_output, 'You currently do not have a location set. Try setting your location by saying: set location'])
+        return build_response(session_attributes, build_speechlet_response('Location Set', speech_output, reprompt_text, should_end_session))
+
+    if dialog_state in ('STARTED', 'IN_PROGRESS'):
+        return continue_dialog()
+    elif dialog_state == 'COMPLETED':
+        should_end_session = False
+        delete_item(check[0]['userId'], check[0]['location'])
+        insert_item(session['user']['userId'], intent['intent']['slots']['Area']['value'])
+        speech_output = ''.join([speech_output, 'Your new location is now {}.'.format(intent['intent']['slots']['Area']['value'])])
+        speech_output = ''.join([speech_output, ' What would you like to eat?'])
+        return build_response(session_attributes, build_speechlet_response('Changing Location', speech_output, reprompt_text, should_end_session))
 
 def food_recommendation_intent(intent, session):
     session_attributes = session.get('attributes', {})
@@ -89,29 +108,28 @@ def food_recommendation_intent(intent, session):
     should_end_session = False
     speech_output = ''
     reprompt_text = speech_output
-    category = ''
-    food = ''
     print('food finder is running')
-    if 'category' in intent['slots'] or 'Food' in intent['slots']:
-        foods = intent['slots']
-        print(foods)
-        if 'value' in foods['Category'] and 'value' in foods['Food']:
-            should_end_session = True
-            category = foods['Category']['value']
-            food = foods['Food']['value']
-            places = yelp_conn(category, food, check[0]['location'])
-            if foods['Category']['value'].upper() == 'none'.upper():
-                speech_output = ''.join([speech_output, 'You can find {}, with your dietary restriction, if any, at {} on {}'.format(food, places[0]['name'], places[0]['location']['address1'])])
-            return build_response(session_attributes, build_speechlet_response('Food Finder', speech_output, reprompt_text, should_end_session))
+    foods = intent['slots']
+    print(foods)
+    if dialog_state in ('STARTED', 'IN_PROGRESS'):
+        return continue_dialog()
+    elif dialog_state == 'COMPLETED':
+        should_end_session = True
+        category_id = foods['Category']['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['id']
+        food = foods['Food']['value']
+        category = foods['Category']['value']
+        price = foods['Price']['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['id']
+        default_location = 'Los Angeles, CA'
+        if category_id.upper() == 'None' and check:
+            places = yelp_conn('', food, check[0]['location'], price)
+            speech_output = ''.join([speech_output, 'You can find {}, with your dietary restriction, if any, at {} on {}.'.format(food, places[0]['name'], places[0]['location']['address1'], check[0]['location'])])
+        elif category and check:
+            places = yelp_conn(category, food, check[0]['location'], price)
+            speech_output = ''.join([speech_output, 'You can find {}, with your dietary restriction, if any, at {} on {}.'.format(food, places[0]['name'], places[0]['location']['address1'], check[0]['location'])])
         else:
-            if dialog_state in ('STARTED', 'IN_PROGRESS'):
-                return continue_dialog()
-            elif dialog_state == 'COMPLETED':
-                should_end_session = True
-                print('ending here')
-                return build_response(session_attributes, build_speechlet_response('Food Finder', speech_output, reprompt_text, should_end_session))
-            speech_output = ''.join([speech_output, 'Try to specify what you want to eat!'])
-    return build_response(session_attributes, build_speechlet_response('Food Finder', speech_output, reprompt_text, should_end_session))
+            places = yelp_conn(category, food, default_location, price)
+            speech_output = ''.join([speech_output, 'You can find {}, with your dietary restriction, if any, at {} on {}.'.format(food, places[0]['name'], places[0]['location']['address1'], default_location)])
+        return build_response(session_attributes, build_speechlet_response('Food Finder', speech_output, reprompt_text, should_end_session))
 
 # --------------- Helper Functions ------------------
 
@@ -125,7 +143,6 @@ def insert_item(userId, location):
             'location': location
         }
     )
-    print('item inserted')
 
 def get_item(userId):
     dynamodb = boto3.resource('dynamodb', region_name = 'us-east-1')
@@ -140,17 +157,25 @@ def get_item(userId):
     else:
         return response['Items']
 
+def delete_item(userId, location):
+    dynamodb = boto3.resource('dynamodb', region_name = 'us-east-1')
+    table = dynamodb.Table('FoodFinderSkill')
+    response = table.delete_item(
+        Key = {
+            'userId': userId,
+            'location': location
+        }
+    )
 
-def yelp_conn(category, term, location):
+def yelp_conn(category, term, location, price):
     url = 'https://api.yelp.com/v3/businesses/search'
     params = { 'location': location,
                'term': term,
                'categories': category,
                'sort_by': 'rating',
+               'price': price,
                'limit': 1
              }
-    # create a python file to get access key for the Yelp API
-    # if you want to use the skill for your own use
     yelp = requests.get(url = url, params = params, headers = {'Authorization': 'Bearer {}'.format(credentials.api_key)})
     yelp_json = json.loads(yelp.text)
     return yelp_json['businesses']
@@ -171,6 +196,8 @@ def on_intent(intent_request, session):
     	return food_recommendation_intent(intent_request, session)
     elif intent_name == 'GetLocationIntent':
         return get_location_intent(intent_request, session)
+    elif intent_name == 'ChangeLocationIntent':
+        return change_location_intent(intent_request, session)
     elif intent_name == 'AMAZON.HelpIntent':
     	return get_welcome_response(session)
     elif intent_name == 'AMAZON.CancelIntent' or intent_name == 'AMAZON.StopIntent':
